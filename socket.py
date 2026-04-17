@@ -1,17 +1,18 @@
 import socket
-import struct
-import json
-import threading
+import struct # used for binary packing
+import json #used for encoding/decoding messages
+import threading #multiple clients can attach to this
 
-from your_car_physics import CarPhysics   # your GitHub module
+from your_car_physics import CarPhysics   # your GitHub module, how would this work, ask aaron
 
 HOST = "127.0.0.1"
-PORT = 9001
+PORT = 9001 
 
 def send_msg(sock, data: dict):
     payload = json.dumps(data).encode("utf-8")
     sock.sendall(struct.pack(">I", len(payload)) + payload)
-# sends data in a lenght prefixed message format
+# takes python dictionary and converts into JSON text then bytes
+#frames the message so the receiver knows how many bytes to read
 
 def recv_msg(sock):
     raw_len = _recv_exactly(sock, 4)
@@ -41,7 +42,7 @@ def handle_client(conn, addr):
             msg = recv_msg(conn)
             if msg is None:
                 break
-            #calls recv_msg function to get the dictionary we decoded earlier, if none(no message) it exits the loop
+            #calls recv_msg function to get message from unity, if none(no message) it exits the loop
 
             physics.set_controls(
                 throttle = float(msg.get("throttle", 0.0)),
@@ -68,6 +69,7 @@ def handle_client(conn, addr):
     finally:
         conn.close()
         print(f"[server] {addr} disconnected")
+        #if it closes the server also neatly disconnects
 #this funciton is basically receiving controls from Unity, We simulate the physics and sends state back, we repeat this every frame
 
 def main():
