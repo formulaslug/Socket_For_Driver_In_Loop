@@ -18,7 +18,7 @@ public class CarPhysicsIPC : MonoBehaviour
 
     private VehicleState _state;
     private readonly object _stateLock = new object();
-    private bool _hasState = false;
+    private volatile bool _hasState = false;
 
     // ── controls written by Update(), read by background thread ──────────
     private struct Controls
@@ -28,6 +28,8 @@ public class CarPhysicsIPC : MonoBehaviour
 
     private Controls _controls;
     private readonly object _controlsLock = new object();
+
+    private volatile bool _connected = false;
 
     // ── socket & thread ───────────────────────────────────────────────────
     private TcpClient  _client;
@@ -43,6 +45,7 @@ public class CarPhysicsIPC : MonoBehaviour
         _client.Connect(serverIP, serverPort);
         _stream  = _client.GetStream();
         _running = true;
+        _connected = true;
 
         _ioThread = new Thread(IOLoop) { IsBackground = true };
         _ioThread.Start();
@@ -52,6 +55,7 @@ public class CarPhysicsIPC : MonoBehaviour
     void OnDestroy()
     {
         _running = false;
+        _connected = false;
         _stream?.Close();
         _client?.Close();
         _ioThread?.Join(500);
@@ -60,6 +64,18 @@ public class CarPhysicsIPC : MonoBehaviour
     // ── called by Unity every frame ───────────────────────────────────────
     void Update()
     {
+        if (!_connected)
+        {
+            if (_hasState)                // only reset once
+            {
+                _hasState = false;
+                transform.position = Vector3.zero;
+                transform.rotation = Quaternion.identity;
+                Debug.LogWarning("[IPC] Disconnected from physics server — car reset");
+            }
+            return;
+        }
+
         // 1. Write this frame's driver inputs for the IO thread to pick up
         lock (_controlsLock)
         {
@@ -122,9 +138,11 @@ public class CarPhysicsIPC : MonoBehaviour
             {
                 if (_running)
                     Debug.LogWarning($"[IPC] Socket error: {e.Message}");
+                _connected = false;
                 break;
             }
         }
+        _connected = false;
         Debug.Log("[IPC] IO thread exiting");
     }
 
