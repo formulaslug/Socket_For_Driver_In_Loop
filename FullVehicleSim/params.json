@@ -1,37 +1,19 @@
-
 {
     "Parameters": {
-        "stepsPerSecond": 300,
-        "simulationDuration": 40.0,
-        "interpolationMethod": "linear", 
+        "ambientTemperature": 20,
 
-        "ambientTemperature": 20, 
-        "tractiveIMax": 300, 
-        "initialBrakeTemperature": 20, 
-        "initialBatteryTemperature": 20, 
-        "vehicleSOC": 1.0, 
-        "initSpeed": 0.0, 
-        "initHeading": [1.0, 0.0, 0.0], 
-        "initPosition": [0.0, 0.0, 0.0], 
-        "initVelocity": [0.0, 0.0, 0.0], 
-
-        "airDensity": 1.230,
-        "dragCoeffAreaCombo": 1.0858790012112278, 
-        "rollingResistanceCoeff": 0.020926359062619436,
-
-        "brakeDiscRadius": 0.09525, 
-        "brakeCaliperArea": 1.23, 
         "wheelCircumferance": 1.35716802635079,
         "wheelRadius": 0.216,
-        "gearRatio": 3.41667,
+        "gearRatio": 3.33333333,
         "maxTorque": 180,
         "friction-coeff-lat": 1.7333,
         "friction-coeff-long": 1.7333,
         "unloaded-radius": 1.7333,
         "p_0": 82000,
         "load_0": 300,
+        "tractiveIMax": 300,
 
-        "Mass": 300, 
+        "Mass": 300,
         "wheelBase": 1.65471,
         "a": 0.853506,
         "frontWeightDist": 46.46,
@@ -49,16 +31,9 @@
         "brakeSurfaceArea": 0.001180643,
         "brakepadThickness": 0.007874,
         "brakeMass": 0.408,
-        "maxBrakeForce": 1500,
-
-        "seriesCells": 30,
-        "cellCapacity_Ah": 2.6
+        "maxBrakeForce": 1500
     },
     "Magic": {
-
-        "cellModelSigma": 3.0,
-        "hysteresisGain": 0.015,
-
         "shape-factor": 0.696268618106842,
         "curvature-scaling-factor": 1.7177082300186157,
         "horizontal-shift-factor": 1.0,
