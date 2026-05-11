@@ -1,10 +1,10 @@
-import json
+import json5
 from typing import Dict, List, Tuple
 
 Magic: dict
 Parameters: dict
-with open('FullVehicleSim\params.json', 'r') as file:
-    params = json.load(file)
+with open('FullVehicleSim\params.json5', 'r') as file:
+    params = json5.load(file)
     Magic = params["Magic"]
     Parameters = params["Parameters"]
     del params

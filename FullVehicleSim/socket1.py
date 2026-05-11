@@ -4,7 +4,7 @@ import json
 import threading
 import numpy as np
 
-from state import VehicleState
+from engine import dynamicStepState
 from paramLoader import (
     varThrottle, varBrakePressureFront, varBrakePressureRear,
     varSteerAngle, varPosX, varPosY, varPosZ,
@@ -54,7 +54,7 @@ def handle_client(conn, addr):
             state[varBrakePressureRear]   = float(msg.get("brake",    0.0))
 
             # step the simulation
-            state = VehicleState(state)
+            state = dynamicStepState(state)
 
             # send back position, yaw, speed
             send_msg(conn, {

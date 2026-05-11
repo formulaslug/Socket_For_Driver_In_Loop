@@ -1,7 +1,8 @@
 import numpy as np
+from paramLoader import *
 
-def calculateDrag(heading, speed, crossSectionalArea=0.63, dragCoefficient=0.6, airDensity=1.230):
-    return  0.5 * airDensity * dragCoefficient * crossSectionalArea * speed**2
+def calcDrag(worldArray:np.ndarray, step:int) -> float:
+    return  0.5 * Parameters["airDensity"] * Parameters["dragCoeffAreaCombo"] * worldArray[step-1, varSpeed]**2
 
-def calculateDownForce(heading, speed, parameters):
+def calcDownForce(worldArray:np.ndarray, step:int) -> np.ndarray:
     return np.asarray([0,0,0,0], dtype=float)
