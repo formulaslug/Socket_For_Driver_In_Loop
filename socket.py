@@ -1,6 +1,6 @@
 import socket
 import struct
-import json
+import json5 as json
 import threading
 import numpy as np
 
