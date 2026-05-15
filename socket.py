@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "Sims-Data/FullVehicleSim"))
+os.chdir(os.path.join(os.path.dirname(__file__), "Sims-Data/FullVehicleSim"))
 import socket
 import struct
 import json5 as json
