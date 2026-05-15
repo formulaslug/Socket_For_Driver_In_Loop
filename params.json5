@@ -1,26 +1,26 @@
-// Base SI Units unless otherwise specified
+
 {
     "Parameters": {
         "stepsPerSecond": 300,
         "simulationDuration": 40.0,
-        "interpolationMethod": "linear", // "linear" or "cubic", this is for interpolating the simultion controls.
+        "interpolationMethod": "linear", 
 
-        "ambientTemperature": 20, // °C
-        "tractiveIMax": 300, // A
-        "initialBrakeTemperature": 20, // °C
-        "initialBatteryTemperature": 20, // °C
-        "vehicleSOC": 1.0, // Out of 1
-        "initSpeed": 0.0, // m/s
-        "initHeading": [1.0, 0.0, 0.0], // Vector pointing in the direction of the front of the car
-        "initPosition": [0.0, 0.0, 0.0], // Starting position of the car in the world frame
-        "initVelocity": [0.0, 0.0, 0.0], // Initial velocity vector in the world frame
+        "ambientTemperature": 20, 
+        "tractiveIMax": 300, 
+        "initialBrakeTemperature": 20, 
+        "initialBatteryTemperature": 20, 
+        "vehicleSOC": 1.0, 
+        "initSpeed": 0.0, 
+        "initHeading": [1.0, 0.0, 0.0], 
+        "initPosition": [0.0, 0.0, 0.0], 
+        "initVelocity": [0.0, 0.0, 0.0], 
 
         "airDensity": 1.230,
-        "dragCoeffAreaCombo": 1.0858790012112278, // Combines area and drag coeff into one constant
+        "dragCoeffAreaCombo": 1.0858790012112278, 
         "rollingResistanceCoeff": 0.020926359062619436,
 
-        "brakeDiscRadius": 0.09525, // meters (3.75 inches) -- Brake pad is ~1 inch wide near the edge of an 8 inch diamater rotor
-        "brakeCaliperArea": 1.23, // in^2
+        "brakeDiscRadius": 0.09525, 
+        "brakeCaliperArea": 1.23, 
         "wheelCircumferance": 1.35716802635079,
         "wheelRadius": 0.216,
         "gearRatio": 3.41667,
@@ -31,7 +31,7 @@
         "p_0": 82000,
         "load_0": 300,
 
-        "Mass": 300, // kg
+        "Mass": 300, 
         "wheelBase": 1.65471,
         "a": 0.853506,
         "frontWeightDist": 46.46,
@@ -51,7 +51,7 @@
         "brakeMass": 0.408,
         "maxBrakeForce": 1500,
 
-        "seriesCells": 30,s
+        "seriesCells": 30,
         "cellCapacity_Ah": 2.6
     },
     "Magic": {
@@ -159,6 +159,6 @@
         "pressureYA": -3.086921788053587e-05,
         "pressureYB": -9.812999633140862e-05,
         "pressureYC": 0.9998338222503662,
-        "gysign": -0.10000000149011612,
+        "gysign": -0.10000000149011612
     }
 }
