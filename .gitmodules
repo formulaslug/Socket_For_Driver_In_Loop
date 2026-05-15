@@ -1,0 +1,3 @@
+[submodule "Sims-Data"]
+	path = Sims-Data
+	url = git@github.com:formulaslug/Sims-Data.git
