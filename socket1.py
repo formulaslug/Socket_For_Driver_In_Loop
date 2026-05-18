@@ -1,7 +1,7 @@
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "Sims-Data/FullVehicleSim"))
-os.chdir(os.path.join(os.path.dirname(__file__), "Sims-Data/FullVehicleSim"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "Socket_For_Driver_In_Loop\FullVehicleSim"))
+os.chdir(os.path.join(os.path.dirname(__file__), "Socket_For_Driver_In_Loop\FullVehicleSim"))
 import socket
 import struct
 import json5 as json
@@ -18,17 +18,18 @@ from paramLoader import (
 HOST = "127.0.0.1"
 PORT = 9001
 
-def send_msg(sock, data: dict):
-    payload = json.dumps(data).encode("utf-8")
-    sock.sendall(struct.pack(">I", len(payload)) + payload)
+def send_msg(conn, data: dict):
+    payload = json.dumps(data) + "\n"
+    conn.sendall(payload.encode("utf-8"))
 
-def recv_msg(sock):
-    raw_len = _recv_exactly(sock, 4)
-    if not raw_len:
-        return None
-    n = struct.unpack(">I", raw_len)[0]
-    raw = _recv_exactly(sock, n)
-    return json.loads(raw) if raw else None
+def recv_msg(conn):
+    buf = b""
+    while not buf.endswith(b"\n"):
+        chunk = conn.recv(1024)
+        if not chunk:
+            return None
+        buf += chunk
+    return json.loads(buf.decode("utf-8").strip())
 
 def _recv_exactly(sock, n):
     buf = b""
@@ -74,6 +75,8 @@ def handle_client(conn, addr):
     finally:
         conn.close()
         print(f"[server] {addr} disconnected")
+        sys.exit()
+        return 0
 
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
