@@ -119,11 +119,12 @@ public class CarPhysicsIPC : MonoBehaviour
                 lock (_controlsLock) { ctrl = _controls; }
 
                 // serialize to JSON
-                string json = $"{{\"throttle\":{ctrl.throttle:F4}," +
-                              $"\"steer\":{ctrl.steer:F4},"          +
-                              $"\"frontBrakes\":{ctrl.frontBrakes:F4},"          +
-                              $"\"backBrakes\":{ctrl.backBrakes:F4},"          +
-                              $"\"dt\":{ctrl.dt:F6}}}";
+
+                string json = string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                 "{{\"throttle\":{0:F4},\"steer\":{1:F4},\"frontBrakes\":{2:F4},\"backBrakes\":{3:F4},\"dt\":{4:F6}}}",
+                ctrl.throttle, ctrl.steer, ctrl.frontBrakes, ctrl.backBrakes, ctrl.dt
+                );
 
                 SendMsg(json);
 
