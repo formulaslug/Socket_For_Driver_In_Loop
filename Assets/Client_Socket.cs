@@ -23,7 +23,7 @@ public class CarPhysicsIPC : MonoBehaviour
     // ── controls written by Update(), read by background thread ──────────
     private struct Controls
     {
-        public float throttle, steer, brake, dt;
+        public float throttle, steer,  frontBrakes , backBrakes, dt;
     }
 
     private Controls _controls;
@@ -81,9 +81,10 @@ public class CarPhysicsIPC : MonoBehaviour
         {
             _controls = new Controls
             {
-                throttle = Input.GetAxis("Vertical"),    // W/S or left stick Y
-                steer    = Input.GetAxis("Horizontal"),  // A/D or left stick X
-                brake    = Input.GetKey(KeyCode.Space) ? 1f : 0f,
+                throttle = Input.GetAxis("Vertical"),    //W key or up arrow to go forward, S key or down arrow to go backwards
+                steer    = Input.GetAxis("Horizontal"),  // A key or left pointing arrow to go left, D key or right pointing arrow to go right
+                frontBrakes    = Input.GetKey(KeyCode.Space) ? 1f : 0f, // space bar
+                backBrakes = Input.GetKey(KeyCode.X) ? 1f : 0f, // X
                 dt       = Time.deltaTime,               // actual frame time
             };
         }
@@ -117,7 +118,8 @@ public class CarPhysicsIPC : MonoBehaviour
                 // serialize to JSON
                 string json = $"{{\"throttle\":{ctrl.throttle:F4}," +
                               $"\"steer\":{ctrl.steer:F4},"          +
-                              $"\"brake\":{ctrl.brake:F4},"          +
+                              $"\"frontBrakes\":{ctrl.frontBrakes:F4},"          +
+                              $"\"backBrakes\":{ctrl.backBrakes:F4},"          +
                               $"\"dt\":{ctrl.dt:F6}}}";
 
                 SendMsg(json);
