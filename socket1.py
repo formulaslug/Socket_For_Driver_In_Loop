@@ -55,8 +55,8 @@ def handle_client(conn, addr):
             # plug Unity's controls into the correct slots in the array
             state[varThrottle]            = float(msg.get("throttle", 0.0))
             state[varSteerAngle]          = float(msg.get("steer",    0.0))
-            state[varBrakePressureFront]  = float(msg.get("brake",    0.0))
-            state[varBrakePressureRear]   = float(msg.get("brake",    0.0))
+            state[varBrakePressureFront]  = float(msg.get("frontBrakes",    0.0))
+            state[varBrakePressureRear]   = float(msg.get("backBrakes",    0.0))
 
             # step the simulation
             state = dynamicStepState(state)
