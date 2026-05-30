@@ -89,6 +89,8 @@ public class CarPhysicsIPC : MonoBehaviour
             };
         }
 
+        Debug.Log($"[IPC] throttle: {_controls.throttle}");
+
         // 2. Apply latest physics state to the car's Transform
         if (!_hasState) return;
 
@@ -109,6 +111,7 @@ public class CarPhysicsIPC : MonoBehaviour
     {
         while (_running)
         {
+            Debug.Log("[IPC] IOLoop running");
             try
             {
                 // grab the latest controls the main thread wrote
@@ -139,7 +142,7 @@ public class CarPhysicsIPC : MonoBehaviour
             catch (Exception e)
             {
                 if (_running)
-                    Debug.LogWarning($"[IPC] Socket error: {e.Message}");
+                    Debug.LogWarning($"[IPC] Socket error: {e.Message}\n{e.StackTrace}");
                 _connected = false;
                 break;
             }
