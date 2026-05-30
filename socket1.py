@@ -59,7 +59,11 @@ def handle_client(conn, addr):
             state[varBrakePressureRear]   = float(msg.get("backBrakes",    0.0))
 
             # step the simulation
-            state = dynamicStepState(state)
+            try:
+              state = dynamicStepState(state)
+            except Exception as e:
+                 print(f"[server] physics error: {e}")
+                 break
 
             # send back position, yaw, speed
             send_msg(conn, {
