@@ -4,10 +4,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "Sims-Data", "FullVehicl
 os.chdir(os.path.join(os.path.dirname(__file__), "Sims-Data", "FullVehicleSim"))
 import socket
 import struct
-import json5 as json
+import json
+import json5
 import threading
 import numpy as np
-
 from engine import dynamicStepState
 from paramLoader import (
     varThrottle, varBrakePressureFront, varBrakePressureRear,
@@ -18,18 +18,32 @@ from paramLoader import (
 HOST = "127.0.0.1"
 PORT = 9001
 
-def send_msg(conn, data: dict):
-    payload = json.dumps(data) + "\n"
-    conn.sendall(payload.encode("utf-8"))
+def send_msg(sock, data: dict):
+    try:
+        payload = json.dumps(data).encode("utf-8")
+        sock.sendall(struct.pack(">I", len(payload)) + payload)
+        print(f"[server] sent: {data}")
+    except Exception as e:
+        print(f"[server] send error: {e}")
 
-def recv_msg(conn):
-    buf = b""
-    while not buf.endswith(b"\n"):
-        chunk = conn.recv(1024)
-        if not chunk:
+def recv_msg(sock):
+    try:
+        raw_len = _recv_exactly(sock, 4)
+        if not raw_len:
+            print("[server] recv_msg: no length received")
             return None
-        buf += chunk
-    return json.loads(buf.decode("utf-8").strip())
+        n = struct.unpack(">I", raw_len)[0]
+        print(f"[server] expecting {n} bytes")
+        raw = _recv_exactly(sock, n)
+        if not raw:
+            print("[server] recv_msg: no data received")
+            return None
+        msg = json.loads(raw)
+        print(f"[server] received: {msg}")
+        return msg
+    except Exception as e:
+        print(f"[server] recv error: {e}")
+        return None
 
 def _recv_exactly(sock, n):
     buf = b""
@@ -42,30 +56,24 @@ def _recv_exactly(sock, n):
 
 def handle_client(conn, addr):
     print(f"[server] Unity connected from {addr}")
-    
-    # create a 44-element array of zeros — this is the car's starting state
     state = np.zeros(44)
-
     try:
         while True:
             msg = recv_msg(conn)
             if msg is None:
+                print("[server] msg is None, disconnecting")
                 break
-
-            # plug Unity's controls into the correct slots in the array
-            state[varThrottle]            = float(msg.get("throttle", 0.0))
-            state[varSteerAngle]          = float(msg.get("steer",    0.0))
-            state[varBrakePressureFront]  = float(msg.get("frontBrakes",    0.0))
-            state[varBrakePressureRear]   = float(msg.get("backBrakes",    0.0))
-
-            # step the simulation
+            state[varThrottle]           = float(msg.get("throttle", 0.0))
+            state[varSteerAngle]         = float(msg.get("steer",    0.0))
+            state[varBrakePressureFront] = float(msg.get("frontBrakes", 0.0))
+            state[varBrakePressureRear]  = float(msg.get("backBrakes",  0.0))
             try:
-              state = dynamicStepState(state)
+                state = dynamicStepState(state)
             except Exception as e:
-                 print(f"[server] physics error: {e}")
-                 break
-
-            # send back position, yaw, speed
+                print(f"[server] physics error: {e}")
+                import traceback
+                traceback.print_exc()
+                break
             send_msg(conn, {
                 "x":     float(state[varPosX]),
                 "y":     float(state[varPosY]),
@@ -73,14 +81,15 @@ def handle_client(conn, addr):
                 "yaw":   float(state[varYawRate]),
                 "speed": float(state[varSpeed]),
             })
-
-    except (ConnectionResetError, BrokenPipeError):
-        pass
+    except (ConnectionResetError, BrokenPipeError) as e:
+        print(f"[server] connection error: {e}")
+    except Exception as e:
+        print(f"[server] unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         conn.close()
         print(f"[server] {addr} disconnected")
-        sys.exit()
-        return 0
 
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
