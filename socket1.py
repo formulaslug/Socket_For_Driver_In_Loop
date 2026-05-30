@@ -38,6 +38,7 @@ def recv_msg(sock):
         if not raw:
             print("[server] recv_msg: no data received")
             return None
+        print(f"[server] raw message: {raw}")
         msg = json.loads(raw)
         print(f"[server] received: {msg}")
         return msg
