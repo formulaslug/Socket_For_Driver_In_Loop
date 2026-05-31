@@ -70,6 +70,7 @@ def handle_client(conn, addr):
             state[varBrakePressureRear]  = float(msg.get("backBrakes",  0.0))
             try:
                 state = dynamicStepState(state)
+                state = np.nan_to_num(state, nan=0.0)
             except Exception as e:
                 print(f"[server] physics error: {e}")
                 import traceback
