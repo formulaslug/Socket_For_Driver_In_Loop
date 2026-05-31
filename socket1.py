@@ -12,7 +12,7 @@ from engine import dynamicStepState
 from paramLoader import (
     varThrottle, varBrakePressureFront, varBrakePressureRear,
     varSteerAngle, varPosX, varPosY, varPosZ,
-    varSpeed, varYawRate , varHeadingX
+    varSpeed, varYawRate , varHeadingX, varHeadingZ
 )
 
 HOST = "127.0.0.1"
@@ -83,7 +83,10 @@ def handle_client(conn, addr):
                 "z":     float(state[varPosZ]),
                 "yaw":   float(state[varYawRate]),
                 "speed": float(state[varSpeed]),
+                "headingX": float(state[varHeadingX]),
+                "headingZ": float(state[varHeadingZ]),
             })
+
     except (ConnectionResetError, BrokenPipeError) as e:
         print(f"[server] connection error: {e}")
     except Exception as e:
