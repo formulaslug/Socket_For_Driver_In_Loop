@@ -12,7 +12,7 @@ from engine import dynamicStepState
 from paramLoader import (
     varThrottle, varBrakePressureFront, varBrakePressureRear,
     varSteerAngle, varPosX, varPosY, varPosZ,
-    varSpeed, varYawRate
+    varSpeed, varYawRate , varHeadingX
 )
 
 HOST = "127.0.0.1"
@@ -58,6 +58,7 @@ def _recv_exactly(sock, n):
 def handle_client(conn, addr):
     print(f"[server] Unity connected from {addr}")
     state = np.zeros(44)
+    state[varHeadingX] = 1.0
     try:
         while True:
             msg = recv_msg(conn)
