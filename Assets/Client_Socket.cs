@@ -121,24 +121,28 @@ public class CarPhysicsIPC : MonoBehaviour
                 // serialize to JSON
 
                 string json = string.Format(
-                System.Globalization.CultureInfo.InvariantCulture,
-                 "{{\"throttle\":{0:F4},\"steer\":{1:F4},\"frontBrakes\":{2:F4},\"backBrakes\":{3:F4},\"dt\":{4:F6}}}",
-                ctrl.throttle, ctrl.steer, ctrl.frontBrakes, ctrl.backBrakes, ctrl.dt
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "{{\"throttle\":{0:F4},\"steer\":{1:F4},\"frontBrakes\":{2:F4},\"backBrakes\":{3:F4},\"dt\":0.003333}}",
+                    ctrl.throttle, ctrl.steer, ctrl.frontBrakes, ctrl.backBrakes
                 );
 
+                Debug.Log($"[IPC] sending throttle: {ctrl.throttle}");
                 SendMsg(json);
 
                 // block here until Python replies — this is fine on a bg thread
                 string reply = RecvMsg();
+                Debug.Log($"[IPC] raw reply: {reply}");
                 if (reply == null) break;
 
                 // parse and cache the state
                 VehicleState s = ParseState(reply);
+                Debug.Log($"[IPC] parsed state: x={s.x}, y={s.y}, z={s.z}");
                 lock (_stateLock)
                 {
                     _state    = s;
                     _hasState = true;
                 }
+                 System.Threading.Thread.Sleep(3);
             }
             catch (Exception e)
             {
@@ -207,18 +211,18 @@ public class CarPhysicsIPC : MonoBehaviour
 
     private static float ExtractFloat(string json, string key)
     {
-        // looks for "key": value
-        string search = $"\"{key}\":";
-        int idx = json.IndexOf(search, StringComparison.Ordinal);
-        if (idx < 0) return 0f;
-        int start = idx + search.Length;
-        int end   = start;
-        while (end < json.Length && (char.IsDigit(json[end])
-               || json[end] == '.' || json[end] == '-' || json[end] == 'e'))
-            end++;
-        return float.TryParse(json.Substring(start, end - start),
-            System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out float val) ? val : 0f;
+    string search = $"\"{key}\":";
+    int idx = json.IndexOf(search, StringComparison.Ordinal);
+    if (idx < 0) return 0f;
+    int start = idx + search.Length;
+    while (start < json.Length && json[start] == ' ') start++;
+    int end = start;
+    while (end < json.Length && (char.IsDigit(json[end])
+           || json[end] == '.' || json[end] == '-' || json[end] == 'e' || json[end] == '+'))
+        end++;
+    return double.TryParse(json.Substring(start, end - start),
+        System.Globalization.NumberStyles.Float,
+        System.Globalization.CultureInfo.InvariantCulture,
+        out double val) ? (float)val : 0f;
     }
 }
