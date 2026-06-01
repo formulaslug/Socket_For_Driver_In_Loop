@@ -16,10 +16,19 @@ from paramLoader import (
 )
 from yaw_rate_model.double_bicycle_model import DoubleBicycleModel, VehicleParameters
 
-# 1. Initialize the bicycle model globally
+true_wheelbase = Parameters.get("wheelBase", 1.589989)
+
+front_weight_dist = 0.4632 
+
+# 3. Dynamically calculate the correct, scaled Lf and Lr
+calculated_Lf = true_wheelbase * (1.0 - front_weight_dist)  # Distance from CG to front axle
+calculated_Lr = true_wheelbase * front_weight_dist
+
 vehicle_params = VehicleParameters(
     mass=Parameters.get("Mass", 300.0),
-    wheelbase=Parameters.get("wheelBase", 1.589989),
+    wheelbase=true_wheelbase,
+    Lf=calculated_Lf,
+    Lr=calculated_Lr
 )
 bicycle_model = DoubleBicycleModel(params=vehicle_params, tire_model="linear")
 
@@ -51,7 +60,7 @@ def recv_msg(sock):
 def _recv_exactly(sock, n):
     buf = b""
     while len(buf) < n:
-        chunk = srv_recv = sock.recv(n - len(buf))
+        chunk = sock.recv(n - len(buf))
         if not chunk: return None
         buf += chunk
     return buf
