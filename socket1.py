@@ -14,8 +14,7 @@ from paramLoader import (
     varSteerAngle, varPosX, varPosY, varPosZ,
     varSpeed, varYawRate , varHeadingX, varHeadingZ, Parameters
 )
-
-from yaw_rate_model.yaw_rate_model import DoubleBicycleModel, VehicleParameters
+from yaw_rate_model.double_bicycle_model import DoubleBicycleModel, VehicleParameters
 
 # 1. Initialize the bicycle model globally
 vehicle_params = VehicleParameters(
