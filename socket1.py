@@ -33,8 +33,8 @@ bicycle_model = DoubleBicycleModel(params=vehicle_params, tire_model="linear")
 
 # Adjust this to your FSAE car's real maximum steering lock in degrees
 MAX_STEER_DEGREES = 25.0
-BRAKE_GAIN_FRONT = 15.0  
-BRAKE_GAIN_REAR = 10.0
+BRAKE_GAIN_FRONT = 1500.0  
+BRAKE_GAIN_REAR = 1000.0
 
 HOST = "127.0.0.1"
 PORT = 9001
