@@ -118,7 +118,14 @@ def handle_client(conn, addr):
                 current_yaw_rate = float(bicycle_model.state[1])
                 
                 # 5. Update our custom heading tracking
-                rotation_angle = current_yaw_rate * dt
+                if current_speed > 0.01:
+                    # Car is moving! Calculate rotation normally
+                    rotation_angle = current_yaw_rate * dt
+                else:
+                    # Car is stopped! Kill the rotation completely so the heading locks tight
+                    rotation_angle = 0.0
+                    current_yaw_rate = 0.0
+                
                 server_yaw_accumulated += rotation_angle
                 cos_theta = np.cos(rotation_angle)
                 sin_theta = np.sin(rotation_angle)
