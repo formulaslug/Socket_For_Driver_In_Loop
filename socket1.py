@@ -80,6 +80,7 @@ def handle_client(conn, addr):
     bicycle_model.reset()
     
     dt = 1 / Parameters["stepsPerSecond"]
+    frame_counter = 0
 
     try:
         while True:
@@ -89,6 +90,9 @@ def handle_client(conn, addr):
                 break
                 
             unity_steer = float(msg.get("steer", 0.0))
+            frame_counter += 1
+            if frame_counter % 30 == 0:  # Only prints once every 30 frames!
+                print(f"[Live Telemetry] Speed: {current_speed:.2f} m/s | YawRate: {state[varYawRate]:.4f} | Pos: ({server_pos_x:.1f}, {server_pos_y:.1f}, {server_pos_z:.1f})")
             
             # Pass controls to the engine array
             state[varThrottle]           = float(msg.get("throttle", 0.0))
