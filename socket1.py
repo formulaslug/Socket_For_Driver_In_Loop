@@ -17,7 +17,6 @@ from paramLoader import (
 from yaw_rate_model.double_bicycle_model import DoubleBicycleModel, VehicleParameters
 
 true_wheelbase = Parameters.get("wheelBase", 1.589989)
-
 front_weight_dist = 0.4632 
 
 # 3. Dynamically calculate the correct, scaled Lf and Lr
@@ -34,6 +33,8 @@ bicycle_model = DoubleBicycleModel(params=vehicle_params, tire_model="linear")
 
 # Adjust this to your FSAE car's real maximum steering lock in degrees
 MAX_STEER_DEGREES = 25.0
+BRAKE_GAIN_FRONT = 15.0  
+BRAKE_GAIN_REAR = 10.0
 
 HOST = "127.0.0.1"
 PORT = 9001
@@ -68,15 +69,12 @@ def _recv_exactly(sock, n):
 def handle_client(conn, addr):
     print(f"[server] Unity connected from {addr}")
     
-    # Initialize state
     state = np.zeros(44)
-    
-    # We maintain our own positioning and heading variables on the server side
-    # to completely bypass the engine's broken straight-line calculations.
     server_pos_x = 0.0
     server_pos_y = 0.0
     server_pos_z = 0.0
-    server_heading = np.array([1.0, 0.0]) # [X, Z] alignment
+    server_heading = np.array([1.0, 0.0])
+    server_yaw_accumulated = 0.0
     bicycle_model.reset()
     
     dt = 1 / Parameters["stepsPerSecond"]
@@ -86,42 +84,42 @@ def handle_client(conn, addr):
         while True:
             msg = recv_msg(conn)
             if msg is None:
-                print("[server] Client disconnected.")
                 break
                 
             unity_steer = float(msg.get("steer", 0.0))
-            frame_counter += 1
-            if frame_counter % 30 == 0:  # Only prints once every 30 frames!
-                print(f"[Live Telemetry] Speed: {current_speed:.2f} m/s | YawRate: {state[varYawRate]:.4f} | Pos: ({server_pos_x:.1f}, {server_pos_y:.1f}, {server_pos_z:.1f})")
+            front_brakes = float(msg.get("frontBrakes", 0.0))
+            rear_brakes = float(msg.get("backBrakes", 0.0))
             
             # Pass controls to the engine array
             state[varThrottle]           = float(msg.get("throttle", 0.0))
             state[varSteerAngle]         = unity_steer
-            state[varBrakePressureFront] = float(msg.get("frontBrakes", 0.0))
-            state[varBrakePressureRear]  = float(msg.get("backBrakes",  0.0))
+            state[varBrakePressureFront] = front_brakes
+            state[varBrakePressureRear]  = rear_brakes
             
             try:
-                # 1. Run the black box engine to get the updated speed and forces
+                # 1. Run the engine to get forward throttle forces and baseline speed
                 state = dynamicStepState(state)
                 state = np.nan_to_num(state, nan=0.0)
                 
-                current_speed = float(state[varSpeed])
+                raw_engine_speed = float(state[varSpeed])
                 
-                # 2. Convert Unity steering (-1 to 1) to physical radians
+                # 2. HIJACK BRAKES: Calculate custom mechanical braking deceleration
+                total_brake_force = (front_brakes * BRAKE_GAIN_FRONT) + (rear_brakes * BRAKE_GAIN_REAR)
+                brake_deceleration = total_brake_force / Parameters.get("Mass", 300.0)
+                
+                # Deduct brake deceleration from our speed calculation
+                current_speed = max(0.0, raw_engine_speed - (brake_deceleration * dt))
+                
+                # 3. Convert Unity steering (-1 to 1) to physical radians
                 steering_radians = unity_steer * MAX_STEER_DEGREES * (np.pi / 180.0)
                 
-                # 3. Integrate the bicycle model to find the true yaw rate
+                # 4. Integrate the bicycle model to find the true yaw rate using our updated speed
                 bicycle_model.integrate_step(v_x=current_speed, delta=steering_radians, dt=dt, method="rk4")
+                current_yaw_rate = float(bicycle_model.state[1])
                 
-                if unity_steer == 0:
-                    current_yaw_rate = 0.0
-                    bicycle_model.state[0] = 0.0 # clear lateral velocity
-                    bicycle_model.state[1] = 0.0 # clear yaw rate
-                else:
-                    current_yaw_rate = float(bicycle_model.state[1])
-                
-                # 4. Update our custom heading tracking using the calculated yaw rate
+                # 5. Update our custom heading tracking
                 rotation_angle = current_yaw_rate * dt
+                server_yaw_accumulated += rotation_angle
                 cos_theta = np.cos(rotation_angle)
                 sin_theta = np.sin(rotation_angle)
                 
@@ -135,14 +133,14 @@ def handle_client(conn, addr):
                 if norm > 0:
                     server_heading = server_heading / norm
                 
-                # 5. Overwrite coordinates based on our updated heading direction
-                # Distance = speed * time
+                # 6. Overwrite coordinates based on our updated heading direction and corrected speed
                 displacement = current_speed * dt
                 server_pos_x += server_heading[0] * displacement
                 server_pos_z += server_heading[1] * displacement
-                server_pos_y = float(state[varPosY]) # Keep whatever Y pitch the engine does
+                server_pos_y = float(state[varPosY]) 
                 
                 # Keep the internal state synced for the next iteration step
+                state[varSpeed] = current_speed
                 state[varYawRate] = current_yaw_rate
                 state[varPosX] = server_pos_x
                 state[varPosZ] = server_pos_z
@@ -155,12 +153,16 @@ def handle_client(conn, addr):
                 traceback.print_exc()
                 break
                 
-            # Send our overridden, correctly curved trajectory back to Unity
+            frame_counter += 1
+            if frame_counter % 30 == 0:
+                # Updated to print accumulated angle in degrees so you can verify it matches Unity
+                print(f"[Live Telemetry] Speed: {current_speed:.2f} m/s | Total Heading Angle: {np.degrees(server_yaw_accumulated):.1f}° | Brakes: F:{front_brakes:.1f}/R:{rear_brakes:.1f}")
+                
             send_msg(conn, {
                 "x":        float(server_pos_x),
                 "y":        float(server_pos_y),
                 "z":        float(server_pos_z),
-                "yaw":      float(state[varYawRate]),
+                "yaw":      float(server_yaw_accumulated),
                 "speed":    float(current_speed),
                 "headingX": float(server_heading[0]),
                 "headingZ": float(server_heading[1]),
