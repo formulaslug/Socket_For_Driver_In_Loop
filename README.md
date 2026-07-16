@@ -16,17 +16,20 @@ Install json5 and numpy
 1) choose where you want the project to live( Documents, Downloads, etc.) then clone repo and make sure you are in correct branch:
    
       _cd Documents_
+   
       _git clone --recurse-submodules https://github.com/formulaslug/Socket_For_Driver_In_Loop.git
+   
       cd Socket_For_Driver_In_Loop
+   
       git checkout python_server_
 
-2) Open Unity Projects and add the cloned folder
+3) Open Unity Projects and add the cloned folder
 
-3) start up the python server by running following command in terminal(MUST do this before we connect Unity). If it successfully connected, the terminal will print something like "Listening on ...."
+4) start up the python server by running following command in terminal(MUST do this before we connect Unity). If it successfully connected, the terminal will print something like "Listening on ...."
    
      _  python3 socket1.py_
 
-4) Press play in Unity.  If it successfully connected, the terminal will print something like "Unity connected from...."
+5) Press play in Unity.  If it successfully connected, the terminal will print something like "Unity connected from...."
 
 **Keys:**
 Once both client and server are successfully connected, we can press the following buttons to make the car move:
