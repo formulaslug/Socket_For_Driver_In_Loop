@@ -1,6 +1,6 @@
 # Socket_For_Driver_In_Loop
 
-Driver in Loop simulation. There are two sides: client and server which communicate over a TCP socket. The server is written in python, and runs vehicle physics. The client is in Unity game engine and is coded in C#. It handles driver inputs. We should keep working on Unity so we have visuals as well. 
+**Driver in Loop simulation.** There are two sides: client and server which communicate over a TCP socket. The server is written in python, and runs vehicle physics. The client is in Unity game engine and is coded in C#. It handles driver inputs. We should keep working on Unity so we have visuals as well. 
 
 **Note:** 
 use python_server branch until it is merged into main
@@ -17,11 +17,11 @@ Install json5 and numpy
    
       _cd Documents_
    
-      _git clone --recurse-submodules https://github.com/formulaslug/Socket_For_Driver_In_Loop.git
+     _ git clone --recurse-submodules https://github.com/formulaslug/Socket_For_Driver_In_Loop.git_
    
-      cd Socket_For_Driver_In_Loop
+     _ cd Socket_For_Driver_In_Loop_
    
-      git checkout python_server_
+     _ git checkout python_server_
 
 3) Open Unity Projects and add the cloned folder
 
@@ -33,11 +33,17 @@ Install json5 and numpy
 
 **Keys:**
 Once both client and server are successfully connected, we can press the following buttons to make the car move:
+
 W means forward
+
 S means backward
+
 A means left
+
 D means right
+
 X means rear brakes
+
 Space means front brakes
        
 
