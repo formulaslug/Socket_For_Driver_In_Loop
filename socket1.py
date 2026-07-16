@@ -16,12 +16,12 @@ from paramLoader import (
 )
 from yaw_rate_model.double_bicycle_model import DoubleBicycleModel, VehicleParameters
 
-true_wheelbase = Parameters.get("wheelBase", 1.589989)
-front_weight_dist = 0.4632 
+true_wheelbase = Parameters.get("wheelBase", 1.589989) #pulls wheelbase from params file
+front_weight_dist = 0.4632 #percentage of car's total mass on front axel
 
-# 3. Dynamically calculate the correct, scaled Lf and Lr
-calculated_Lf = true_wheelbase * (1.0 - front_weight_dist)  # Distance from CG to front axle
-calculated_Lr = true_wheelbase * front_weight_dist
+
+calculated_Lf = true_wheelbase * (1.0 - front_weight_dist)  # Distance from center of gravity to front axle
+calculated_Lr = true_wheelbase * front_weight_dist # Distance from center of gravity to rear axle
 
 vehicle_params = VehicleParameters(
     mass=Parameters.get("Mass", 300.0),
@@ -31,14 +31,14 @@ vehicle_params = VehicleParameters(
 )
 bicycle_model = DoubleBicycleModel(params=vehicle_params, tire_model="linear")
 
-# Adjust this to your FSAE car's real maximum steering lock in degrees
 MAX_STEER_DEGREES = 25.0
-BRAKE_GAIN_FRONT = 1500.0  
+BRAKE_GAIN_FRONT = 1500.0  # this is braking force, make sure this matches FS-4 brake bite
 BRAKE_GAIN_REAR = 1000.0
 
 HOST = "127.0.0.1"
-PORT = 9001
+PORT = 9001 
 
+# send_msg function take a python dict, converts it to JSON, and sends it to Unity with 4-byte tagline infront(so Unity knows exactly how many bytes to read per message)
 def send_msg(sock, data: dict):
     try:
         payload = json.dumps(data).encode("utf-8")
@@ -46,6 +46,7 @@ def send_msg(sock, data: dict):
     except Exception as e:
         print(f"[server] send error: {e}")
 
+#reads 4 bytes from unity and converts it back into a python dict
 def recv_msg(sock):
     try:
         raw_len = _recv_exactly(sock, 4)
@@ -58,6 +59,7 @@ def recv_msg(sock):
         print(f"[server] recv error: {e}")
         return None
 
+# sometimes we may not get all 4 bytes in one message(recv_msg), so this function loops until we get all bytes or the connection closes
 def _recv_exactly(sock, n):
     buf = b""
     while len(buf) < n:
@@ -66,18 +68,24 @@ def _recv_exactly(sock, n):
         buf += chunk
     return buf
 
+'''this funciton initalize a 44 slot array and itilizes coordinates to 0. while loop is to get inputs from unity 
+and put those values into array. We dont use brakes calculations written in dynamicstepstate function because it expected results
+to be in Newtons but unity sends 0 to 1, so we have to calculate it ourselves. Also steering in unity is from -1 to 1so we convert that into
+radians. Used the bicycle model to calculate yaw. in function calculateheading(in sims data) yaw is always 0 so heading is never changed, 
+so we use yaw rate from bicycle model to get rotation angle. We send telemetry message every 30 frames, and then send all updated values 
+back to unity'''
 def handle_client(conn, addr):
     print(f"[server] Unity connected from {addr}")
     
-    state = np.zeros(44)
-    server_pos_x = 0.0
+    state = np.zeros(44) 
+    server_pos_x = 0.0 
     server_pos_y = 0.0
     server_pos_z = 0.0
     server_heading = np.array([1.0, 0.0])
     server_yaw_accumulated = 0.0
     bicycle_model.reset()
     
-    dt = 1 / Parameters["stepsPerSecond"]
+    dt = 1 / Parameters["stepsPerSecond"] 
     frame_counter = 0
 
     try:
@@ -90,39 +98,33 @@ def handle_client(conn, addr):
             front_brakes = float(msg.get("frontBrakes", 0.0))
             rear_brakes = float(msg.get("backBrakes", 0.0))
             
-            # Pass controls to the engine array
+        
             state[varThrottle]           = float(msg.get("throttle", 0.0))
             state[varSteerAngle]         = unity_steer
             state[varBrakePressureFront] = front_brakes
             state[varBrakePressureRear]  = rear_brakes
             
             try:
-                # 1. Run the engine to get forward throttle forces and baseline speed
                 state = dynamicStepState(state)
                 state = np.nan_to_num(state, nan=0.0)
                 
                 raw_engine_speed = float(state[varSpeed])
                 
-                # 2. HIJACK BRAKES: Calculate custom mechanical braking deceleration
                 total_brake_force = (front_brakes * BRAKE_GAIN_FRONT) + (rear_brakes * BRAKE_GAIN_REAR)
                 brake_deceleration = total_brake_force / Parameters.get("Mass", 300.0)
                 
-                # Deduct brake deceleration from our speed calculation
                 current_speed = max(0.0, raw_engine_speed - (brake_deceleration * dt))
                 
-                # 3. Convert Unity steering (-1 to 1) to physical radians
                 steering_radians = unity_steer * MAX_STEER_DEGREES * (np.pi / 180.0)
                 
-                # 4. Integrate the bicycle model to find the true yaw rate using our updated speed
                 bicycle_model.integrate_step(v_x=current_speed, delta=steering_radians, dt=dt, method="rk4")
                 current_yaw_rate = float(bicycle_model.state[1])
                 
-                # 5. Update our custom heading tracking
                 if current_speed > 0.01:
-                    # Car is moving! Calculate rotation normally
+                    # Car is moving
                     rotation_angle = current_yaw_rate * dt
                 else:
-                    # Car is stopped! Kill the rotation completely so the heading locks tight
+                    # Car is stopped
                     rotation_angle = 0.0
                     current_yaw_rate = 0.0
                 
@@ -140,13 +142,11 @@ def handle_client(conn, addr):
                 if norm > 0:
                     server_heading = server_heading / norm
                 
-                # 6. Overwrite coordinates based on our updated heading direction and corrected speed
                 displacement = current_speed * dt
                 server_pos_x += server_heading[0] * displacement
                 server_pos_z += server_heading[1] * displacement
                 server_pos_y = float(state[varPosY]) 
                 
-                # Keep the internal state synced for the next iteration step
                 state[varSpeed] = current_speed
                 state[varYawRate] = current_yaw_rate
                 state[varPosX] = server_pos_x
@@ -162,7 +162,6 @@ def handle_client(conn, addr):
                 
             frame_counter += 1
             if frame_counter % 30 == 0:
-                # Updated to print accumulated angle in degrees so you can verify it matches Unity
                 print(f"[Live Telemetry] Speed: {current_speed:.2f} m/s | Total Heading Angle: {np.degrees(server_yaw_accumulated):.1f}° | Brakes: F:{front_brakes:.1f}/R:{rear_brakes:.1f}")
                 
             send_msg(conn, {
@@ -180,6 +179,7 @@ def handle_client(conn, addr):
     finally:
         conn.close()
 
+#binds the host to the port, listens for any connections
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
         srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
