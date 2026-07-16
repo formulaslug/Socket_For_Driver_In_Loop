@@ -10,7 +10,6 @@ public class CarPhysicsIPC : MonoBehaviour
     public string serverIP   = "127.0.0.1";
     public int    serverPort = 9001;
 
-    // ── latest state written by background thread, read by Update() ──────
     private struct VehicleState
     {
         public float x, y, z, yaw, speed;
@@ -20,7 +19,6 @@ public class CarPhysicsIPC : MonoBehaviour
     private readonly object _stateLock = new object();
     private volatile bool _hasState = false;
 
-    // ── controls written by Update(), read by background thread ──────────
     private struct Controls
     {
         public float throttle, steer,  frontBrakes , backBrakes, dt;
@@ -31,17 +29,16 @@ public class CarPhysicsIPC : MonoBehaviour
 
     private volatile bool _connected = false;
 
-    // ── socket & thread ───────────────────────────────────────────────────
     private TcpClient  _client;
     private NetworkStream _stream;
     private Thread     _ioThread;
     private volatile bool _running = false;
 
-    // ─────────────────────────────────────────────────────────────────────
+  
     void Start()
     {
         _client = new TcpClient();
-        _client.NoDelay = true;           // disable Nagle — low latency matters
+        _client.NoDelay = true;          
         _client.Connect(serverIP, serverPort);
         _stream  = _client.GetStream();
         _running = true;
@@ -61,12 +58,11 @@ public class CarPhysicsIPC : MonoBehaviour
         _ioThread?.Join(500);
     }
 
-    // ── called by Unity every frame ───────────────────────────────────────
     void Update()
     {
         if (!_connected)
         {
-            if (_hasState)                // only reset once
+            if (_hasState)             
             {
                 _hasState = false;
                 transform.position = Vector3.zero;
@@ -76,7 +72,6 @@ public class CarPhysicsIPC : MonoBehaviour
             return;
         }
 
-        // 1. Write this frame's driver inputs for the IO thread to pick up
         lock (_controlsLock)
         {
             _controls = new Controls
@@ -91,22 +86,18 @@ public class CarPhysicsIPC : MonoBehaviour
 
         Debug.Log($"[IPC] throttle: {_controls.throttle}");
 
-        // 2. Apply latest physics state to the car's Transform
+        
         if (!_hasState) return;
 
         VehicleState s;
         lock (_stateLock) { s = _state; }
 
-        // Python works in metres; Unity in metres too — no scaling needed.
-        // If your physics uses a different origin convention, adjust here.
         transform.position = new Vector3(s.x, s.y, s.z);
         transform.rotation = Quaternion.Euler(0f, s.yaw * Mathf.Rad2Deg, 0f);
 
-        // Optional: drive speedometer UI, engine audio, etc.
-        // speedLabel.text = $"{s.speed * 3.6f:F0} km/h";
     }
 
-    // ── background thread: send controls → block → receive state ─────────
+
     private void IOLoop()
     {
         while (_running)
@@ -114,11 +105,11 @@ public class CarPhysicsIPC : MonoBehaviour
             Debug.Log("[IPC] IOLoop running");
             try
             {
-                // grab the latest controls the main thread wrote
+        
                 Controls ctrl;
                 lock (_controlsLock) { ctrl = _controls; }
 
-                // serialize to JSON
+        
 
                 string json = string.Format(
                     System.Globalization.CultureInfo.InvariantCulture,
@@ -129,12 +120,12 @@ public class CarPhysicsIPC : MonoBehaviour
                 Debug.Log($"[IPC] sending throttle: {ctrl.throttle}");
                 SendMsg(json);
 
-                // block here until Python replies — this is fine on a bg thread
+               
                 string reply = RecvMsg();
                 Debug.Log($"[IPC] raw reply: {reply}");
                 if (reply == null) break;
 
-                // parse and cache the state
+               
                 VehicleState s = ParseState(reply);
                 Debug.Log($"[IPC] parsed state: x={s.x}, y={s.y}, z={s.z}");
                 lock (_stateLock)
@@ -156,7 +147,7 @@ public class CarPhysicsIPC : MonoBehaviour
         Debug.Log("[IPC] IO thread exiting");
     }
 
-    // ── framing: 4-byte big-endian length prefix ──────────────────────────
+
     private void SendMsg(string text)
     {
         byte[] payload = Encoding.UTF8.GetBytes(text);
@@ -190,14 +181,13 @@ public class CarPhysicsIPC : MonoBehaviour
         while (total < n)
         {
             int read = _stream.Read(buf, total, n - total);
-            if (read == 0) return null;   // connection closed
+            if (read == 0) return null;  
             total += read;
         }
         return buf;
     }
 
-    // ── minimal JSON parser — avoids adding a JSON library dependency ─────
-    // For a real project, use JsonUtility or Newtonsoft.Json instead.
+
     private static VehicleState ParseState(string json)
     {
         var s = new VehicleState();
