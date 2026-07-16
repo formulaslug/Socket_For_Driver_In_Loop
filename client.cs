@@ -84,7 +84,7 @@ public class CarPhysicsIPC : MonoBehaviour
                 throttle = Input.GetAxis("Vertical"),    //W key or up arrow to go forward, S key or down arrow to go backwards
                 steer    = Input.GetAxis("Horizontal"),  // A key or left pointing arrow to go left, D key or right pointing arrow to go right
                 frontBrakes    = Input.GetKey(KeyCode.Space) ? 1f : 0f, // space bar
-                backBrakes = Input.GetKey(KeyCode.X) ? 1f : 0f, // X key
+                backBrakes = Input.GetKey(KeyCode.X) ? 1f : 0f, // X
                 dt       = Time.deltaTime,               // actual frame time
             };
         }
