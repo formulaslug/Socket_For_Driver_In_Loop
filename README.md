@@ -17,17 +17,17 @@ Install json5 and numpy
    
       _cd Documents_
    
-     _ git clone --recurse-submodules https://github.com/formulaslug/Socket_For_Driver_In_Loop.git_
+      _git clone --recurse-submodules https://github.com/formulaslug/Socket_For_Driver_In_Loop.git_
    
-     _ cd Socket_For_Driver_In_Loop_
+     _cd Socket_For_Driver_In_Loop_
    
-     _ git checkout python_server_
+     _git checkout python_server_
 
 3) Open Unity Projects and add the cloned folder
 
 4) start up the python server by running following command in terminal(MUST do this before we connect Unity). If it successfully connected, the terminal will print something like "Listening on ...."
    
-     _  python3 socket1.py_
+     _python3 socket1.py_
 
 5) Press play in Unity.  If it successfully connected, the terminal will print something like "Unity connected from...."
 
