@@ -9,9 +9,9 @@ use python_server branch until it is merged into main
 Python server(file name socket1.py) listens on local port and waits for Unity to connect. Client(file named Client_Socket.cs in Assets folder) side connects to server, reads inputs every frame, and sends it to the server. The server updates the car's variables and sends it back to the client. Client moves the car accordingly. This loop repeats until client is disconnected.
 
 **Set up:**
-Install Unity, version 6000.4.3f1
-Make sure to have python 3
-Install json5 and numpy
+Install Unity, version 6000.4.3f1. 
+Make sure to have python 3. 
+Install json5 and numpy. 
 
 1) choose where you want the project to live( Documents, Downloads, etc.) then clone repo and make sure you are in correct branch:
    
