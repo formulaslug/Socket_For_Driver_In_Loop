@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple
 
 Magic: dict
 Parameters: dict
-with open('FullVehicleSim\params.json5', 'r') as file:
+with open('params.json5', 'r') as file:
     params = json5.load(file)
     Magic = params["Magic"]
     Parameters = params["Parameters"]
