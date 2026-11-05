@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Plain colored materials made in code, so the track and car need no assets.
+// plain colored materials made in code, so the track and car need no assets.
 //
-// Trick: copy the material Unity puts on a brand-new cube. That's the right default shader for
+// trick: copy the material Unity puts on a brand-new cube. that's the right default shader for
 // whatever render pipeline the project uses (Built-in or URP), so the colors show up either way.
 public static class SimpleMaterials
 {
@@ -25,7 +25,7 @@ public static class SimpleMaterials
         return material;
     }
 
-    // A primitive with a color and no collider (the server does the physics, not Unity).
+    // a primitive with a color and no collider (the server does the physics, not Unity).
     public static GameObject Part(PrimitiveType type, string name, Transform parent,
                                   Vector3 localPosition, Vector3 localScale, Color color)
     {

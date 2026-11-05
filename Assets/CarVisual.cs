@@ -1,11 +1,6 @@
 using UnityEngine;
 
-// A simple FSAE-style car built from Unity's basic shapes, with wheels that roll with the
-// speed and front wheels that turn with the steering. Put it on the object that has
-// DILCarClient (DILBootstrap adds it for you if the car has nothing to show).
-//
-// The car's origin sits on the ground at its center. +Z is forward, +X is right.
-// Sizes come from the FS cars: 16 in tires, about 1.59 m wheelbase, 2.9 m long.
+// 
 public class CarVisual : MonoBehaviour
 {
     [Header("Size (meters)")]

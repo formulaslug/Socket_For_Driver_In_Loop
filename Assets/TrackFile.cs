@@ -4,14 +4,14 @@ using System.Globalization;
 using System.Text;
 using UnityEngine;
 
-// One track (accel, skidpad, Blue Max...) read from a "fs-dil-track-v1" JSON file.
+// one track (accel, skidpad, Blue Max...) read from a "fs-dil-track-v1" JSON file.
 //
-// All points stay in the SERVER's frame: Vector2(x, z) in meters, the same numbers that are
+// all points stay in the SERVER's frame: Vector2(x, z) in meters, the same numbers that are
 // in the file and that socket1.py uses. TrackLoader converts to Unity only when it draws,
 // with ToUnity(): server (x, z) -> Unity (z, height, x).
 //
-// Why a hand-written JSON reader at the bottom? Unity's built-in JsonUtility can't read
-// arrays of arrays, and the edge lines are lists of [x, z] pairs. This keeps the track files
+// why a hand-written JSON reader at the bottom? Unity's built-in JsonUtility can't read
+// arrays of arrays, and the edge lines are lists of [x, z] pairs. this keeps the track files
 // exactly as they are and needs no extra package.
 public class TrackFile
 {
@@ -48,11 +48,9 @@ public class TrackFile
     public List<Cone> cones = new List<Cone>();
     public List<Gate> gates = new List<Gate>();
 
-    // Server (x, z) + height -> Unity position. The ONE place this swap lives for the track.
+    // server (x, z) + height -> Unity position. the ONE place this swap lives for the track.
     public static Vector3 ToUnity(Vector2 serverXZ, float height) =>
         new Vector3(serverXZ.y, height, serverXZ.x);
-
-    // ======================= Reading the file =======================
 
     public static TrackFile Parse(string json)
     {
@@ -101,7 +99,7 @@ public class TrackFile
         return t;
     }
 
-    // Small helpers so the code above reads like the file does.
+    // small helpers so the code above reads like the file does.
     static Dictionary<string, object> Obj(Dictionary<string, object> d, string key) =>
         d.TryGetValue(key, out object v) && v is Dictionary<string, object> o ? o : new Dictionary<string, object>();
 
@@ -120,9 +118,8 @@ public class TrackFile
         return xz != null && xz.Count >= 2 ? new Vector2((float)(double)xz[0], (float)(double)xz[1]) : new Vector2(0f, 0f);
     }
 
-    // ======================= A tiny JSON reader =======================
-    // Turns JSON text into: Dictionary<string, object> for {...}, List<object> for [...],
-    // double for numbers, string, bool, or null. Reads one character at a time, left to right.
+    // turns JSON text into: Dictionary<string, object> for {...}, List<object> for [...], 
+    // double for numbers, string, bool, or null. reads one character at a time, left to right.
     static class MiniJson
     {
         public static object Parse(string text)

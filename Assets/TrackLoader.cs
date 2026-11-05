@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Loads a track file and makes it drivable: draws the grass, asphalt and paint, stands up the
+// loads a track file and makes it drivable: draws the grass, asphalt and paint, stands up the
 // cones, puts the car on the start line, and runs the timer.
 //
-//   Keys 1, 2, 3 = Blue Max, Accel, Skidpad (the order of trackFiles below)
+//   keys 1, 2, 3 = Blue Max, Accel, Skidpad (the order of trackFiles below)
 //   R            = reset (handled by DILCarClient; the timer and cones reset with it)
 //
-// Track files live in Assets/Resources/Tracks/ so Unity can find them by name.
-// Track coordinates are world coordinates, so this object always sits at the origin.
+// track files live in Assets/Resources/Tracks/ so Unity can find them by name.
+// track coordinates are world coordinates, so this object always sits at the origin.
 public class TrackLoader : MonoBehaviour
 {
     [Tooltip("File names in Assets/Resources/Tracks, without .json. Keys 1, 2, 3... load them in this order.")]
@@ -26,7 +26,7 @@ public class TrackLoader : MonoBehaviour
     public TrackFile Current { get; private set; }
     public TrackTiming Timing { get; private set; }
 
-    // What a cone looks like standing up and knocked over, for the tip-over animation.
+    // what a cone looks like standing up and knocked over, for the tip-over animation.
     class ConeView
     {
         public Transform transform;
@@ -45,8 +45,6 @@ public class TrackLoader : MonoBehaviour
     GUIStyle hudStyle;
 
     static Mesh coneMesh;
-
-    // ======================= Unity events =======================
 
     void Start()
     {
@@ -72,13 +70,13 @@ public class TrackLoader : MonoBehaviour
         AnimateTippingCones();
         if (car == null || Timing == null) return;
 
-        // Where the car is, back in the server's frame: Unity (X, Z) = server (z, x).
+        // where the car is, back in the server's frame: Unity (X, Z) = server (z, x).
         Vector3 p = car.transform.position;
         Vector3 f = car.transform.forward;
         Vector2 position = new Vector2(p.z, p.x);
         Vector2 heading = new Vector2(f.z, f.x);
 
-        // A jump of more than 5 m in one frame is a reset, not driving, so it can't cross a gate.
+        // a jump of more than 5 m in one frame is a reset, not driving, so it can't cross a gate.
         float dx = position.x - previousPosition.x, dz = position.y - previousPosition.y;
         if (havePrevious && dx * dx + dz * dz < 25f)
         {
@@ -88,8 +86,6 @@ public class TrackLoader : MonoBehaviour
         previousPosition = position;
         havePrevious = true;
     }
-
-    // ======================= Loading a track =======================
 
     public void Load(int index)
     {
@@ -109,7 +105,7 @@ public class TrackLoader : MonoBehaviour
             return;
         }
 
-        // Throw away the old track and start fresh.
+        // throw away the old track and start fresh.
         if (built != null) Destroy(built.gameObject);
         built = new GameObject("Track: " + track.name).transform;
         built.SetParent(transform, false);
@@ -123,7 +119,7 @@ public class TrackLoader : MonoBehaviour
             BuildSurface(surface);
         BuildCones(track);
 
-        // The start line: an empty object facing down the track. The car spawns on it.
+        // the start line: an empty object facing down the track. the car spawns on it.
         Transform spawn = new GameObject("Spawn").transform;
         spawn.SetParent(built, false);
         spawn.position = TrackFile.ToUnity(track.spawnPos, 0f);
@@ -133,7 +129,7 @@ public class TrackLoader : MonoBehaviour
         Debug.Log($"[Track] Loaded {track.name}: {track.cones.Count} cones, {track.gates.Count} timing gate(s)");
     }
 
-    // A flat strip between a left and a right edge line: one quad (2 triangles) per step.
+    // a flat strip between a left and a right edge line: one quad (2 triangles) per step.
     void BuildSurface(TrackFile.Surface s)
     {
         int n = Math.Min(s.left.Count, s.right.Count);
@@ -154,7 +150,7 @@ public class TrackLoader : MonoBehaviour
         for (int q = 0; q < quads; q++)
         {
             int a = 2 * q, b = a + 1, c = 2 * ((q + 1) % n), d = c + 1;
-            // Both windings, so the strip shows from above whichever way the file drew it.
+            // both windings, so the strip shows from above whichever way the file drew it.
             int[] both = { a, c, b, b, c, d, a, b, c, b, d, c };
             Array.Copy(both, 0, triangles, q * 12, 12);
         }
@@ -197,13 +193,11 @@ public class TrackLoader : MonoBehaviour
         }
     }
 
-    // ======================= Cones getting hit =======================
-
     void KnockOver(int index, Vector2 heading)
     {
         ConeView cone = coneViews[index];
         Vector3 forward = new Vector3(heading.y, 0f, heading.x);   // car's heading, in Unity
-        // Lie it down pointing the way the car was going, shoved 0.8 m ahead.
+        // lie it down pointing the way the car was going, shoved 0.8 m ahead.
         cone.downRotation = Quaternion.FromToRotation(Vector3.up, forward);
         cone.downPosition = cone.homePosition + forward * 0.8f + Vector3.up * 0.15f;
         cone.knockedAt = Time.time;
@@ -237,8 +231,6 @@ public class TrackLoader : MonoBehaviour
         havePrevious = false;
     }
 
-    // ======================= Timer on screen =======================
-
     void OnGUI()
     {
         if (!showTimer || Timing == null || Current == null) return;
@@ -258,8 +250,6 @@ public class TrackLoader : MonoBehaviour
         GUI.matrix = originalMatrix;
     }
 
-    // ======================= Looks =======================
-
     static Color ColorFor(string name)
     {
         switch (name)
@@ -273,8 +263,8 @@ public class TrackLoader : MonoBehaviour
         }
     }
 
-    // A cone 1 m wide and 1 m tall with its base at y = 0. Each cone object scales it to size.
-    // Every side triangle gets its own corners so it's lit as a flat face.
+    // a cone 1 m wide and 1 m tall with its base at y = 0. each cone object scales it to size.
+    // every side triangle gets its own corners so it's lit as a flat face.
     static Mesh MakeConeMesh(int segments)
     {
         var vertices = new List<Vector3>();

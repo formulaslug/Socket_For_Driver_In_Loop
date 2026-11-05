@@ -1,16 +1,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Fills in whatever the scene is missing, so you can press Play and drive right away.
+// fills in whatever the scene is missing, so you can press Play and drive right away.
 //
-// The scene in the repo is a single GameObject with the team's CarPhysicsIPC on it: no car body,
-// camera, light or track. When you press Play, this adds only the pieces that aren't there yet:
-//   DILCarClient, a car model, the dashboard, a camera with CameraSwitcher, a light, the track.
-// Anything you've already added yourself is left alone. Nothing is saved into the scene file,
+// the scene in the repo is a single GameObject with the team's CarPhysicsIPC on it: no car body,
+// camera, light or track. when you press Play, this adds only the pieces that aren't there yet:
+//   DILCarClient, a car model (the real FS-4 if its file is in Resources/CarModel, else the box car),
+//   the dashboard, car sound, a camera with CameraSwitcher, a light, the track, the lap screen.
+// anything you've already added yourself is left alone. nothing is saved into the scene file,
 // and no existing script is changed: it all disappears when you press Stop, and comes back next Play.
 //
-// It only runs in scenes that have a CarPhysicsIPC or a DILCarClient, so other scenes are untouched.
-// Don't want it? Delete this file.
+// it only runs in scenes that have a CarPhysicsIPC or a DILCarClient, so other scenes are untouched.
+// don't want it? delete this file.
 public static class DILBootstrap
 {
     // Unity calls this by itself after the scene loads, before any Start() runs.
@@ -25,7 +26,7 @@ public static class DILBootstrap
             CarPhysicsIPC original = Object.FindFirstObjectByType<CarPhysicsIPC>();
             if (original == null) return;            // not a DIL scene
 
-            // Switch the original client off for this Play session only (its file and the scene
+            // switch the original client off for this Play session only (its file and the scene
             // stay as they are), and put DILCarClient on the same object with the same server.
             original.enabled = false;
             car = original.gameObject.AddComponent<DILCarClient>();
@@ -34,11 +35,21 @@ public static class DILBootstrap
             added.Add("DILCarClient (original CarPhysicsIPC switched off while playing)");
         }
 
-        // Car model, unless the car already has something you can see (like your own cube).
-        if (car.GetComponentInChildren<Renderer>() == null && car.GetComponent<CarVisual>() == null)
+        // car model, unless the car already has something you can see (like your own cube).
+        // the real FS-4 model if Assets/Resources/CarModel/FS-4.fbx is there, otherwise the box car.
+        if (car.GetComponentInChildren<Renderer>() == null && car.GetComponent<CarVisual>() == null &&
+            car.GetComponent<CarModel>() == null)
         {
-            car.gameObject.AddComponent<CarVisual>();
-            added.Add("car model");
+            if (CarModel.IsAvailable())
+            {
+                car.gameObject.AddComponent<CarModel>();
+                added.Add("FS-4 3D model");
+            }
+            else
+            {
+                car.gameObject.AddComponent<CarVisual>();
+                added.Add("box car model");
+            }
         }
 
         if (Object.FindFirstObjectByType<Dashboard>() == null)
@@ -47,7 +58,7 @@ public static class DILBootstrap
             added.Add("dashboard");
         }
 
-        // Camera. It must not be a child of the car, or the chase view fights the parent.
+        // camera. it must not be a child of the car, or the chase view fights the parent.
         Camera cam = Camera.main != null ? Camera.main : Object.FindFirstObjectByType<Camera>();
         if (cam == null)
         {
@@ -64,6 +75,15 @@ public static class DILBootstrap
             added.Add("camera switching");
         }
 
+        // sound needs something to hear it: an AudioListener, normally on the camera.
+        if (Object.FindFirstObjectByType<AudioListener>() == null)
+            cam.gameObject.AddComponent<AudioListener>();
+        if (Object.FindFirstObjectByType<CarSound>() == null)
+        {
+            car.gameObject.AddComponent<CarSound>();
+            added.Add("car sound");
+        }
+
         if (Object.FindFirstObjectByType<Light>() == null)
         {
             Light sun = new GameObject("Sun").AddComponent<Light>();
@@ -72,10 +92,16 @@ public static class DILBootstrap
             added.Add("light");
         }
 
-        if (Object.FindFirstObjectByType<TrackLoader>() == null)
+        TrackLoader track = Object.FindFirstObjectByType<TrackLoader>();
+        if (track == null)
         {
-            new GameObject("Track").AddComponent<TrackLoader>();
+            track = new GameObject("Track").AddComponent<TrackLoader>();
             added.Add("track");
+        }
+        if (Object.FindFirstObjectByType<LapScreen>() == null)
+        {
+            track.gameObject.AddComponent<LapScreen>();
+            added.Add("lap screen");
         }
 
         if (added.Count > 0)

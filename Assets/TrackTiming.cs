@@ -2,16 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Scores a run: cone hits, timing gates, and lap / accel / skidpad times.
-//
-// Plain C# with no Unity objects in it, so it can be tested outside Unity. It is the same
-// logic as TrackRun in tracks/drive_test.py (the Python autopilot test), line for line, so
-// the autopilot's scores predict what the game shows.
-//
-// Everything is in the server's frame: positions are Vector2(x, z) in meters.
+// scores a run: cone hits, timing gates, and lap / accel / skidpad times. this was just cus i had extra time and had this experience from mario kart wii modding awhile back
+// everything is in the server's frame: positions are Vector2(x, z) in meters.
 public class TrackTiming
 {
-    // Car footprint for cone hits: an FS car is about 2.9 m long and 1.45 m wide.
+    // car footprint for cone hits: an FS car is about 2.9 m long and 1.45 m wide.
     public float carHalfLength = 1.45f;
     public float carHalfWidth = 0.72f;
     public const float ConeRadius = 0.15f;
@@ -31,6 +26,7 @@ public class TrackTiming
     public float Result { get; private set; } = -1f;   // accel / skidpad final time, -1 = not done
     public float SkidRight { get; private set; } = -1f;
     public float SkidLeft { get; private set; } = -1f;
+    public int ResultCones { get; private set; } = -1;  // cones counted in Result, -1 = not done
 
     public TrackTiming(TrackFile track)
     {
@@ -40,7 +36,15 @@ public class TrackTiming
 
     public bool IsConeHit(int index) => coneHit[index];
 
-    // Start the run over: cones stand back up, all times cleared.
+    // read-only state for the lap screen (LapScreen.cs). the scoring doesn't use these.
+    public string Mode => track.timingMode;
+    public float ConePenalty => track.conePenaltySeconds;
+    public float RunStart => lapStart;              // when the current lap / run started, -1 = not yet
+    public int ConesThisLap => lapCones;
+    public int SkidpadStep => Math.Min(skidCrossings.Count, 5);   // 0..5, see StatusText
+    public float LastCrossing => skidCrossings.Count > 0 ? skidCrossings[skidCrossings.Count - 1] : -1f;
+
+    // start the run over: cones stand back up, all times cleared.
     public void Reset()
     {
         Array.Clear(coneHit, 0, coneHit.Length);
@@ -51,16 +55,17 @@ public class TrackTiming
         lapCones = 0;
         HitTotal = 0;
         Result = -1f;
+        ResultCones = -1;
         SkidRight = SkidLeft = -1f;
     }
 
-    // Call once per frame with where the car was and where it is now.
-    // heading = unit vector the car points along. Returns the cones hit THIS call.
+    // call once per frame with where the car was and where it is now.
+    // heading = unit vector the car points along. returns the cones hit THIS call.
     public List<int> Update(float time, Vector2 from, Vector2 to, Vector2 heading)
     {
         var newlyHit = new List<int>();
 
-        // Cone hits: is the cone inside the car's rectangle (grown by the cone's radius)?
+        // cone hits: is the cone inside the car's rectangle (grown by the cone's radius)?
         // "along" = how far ahead of the car's center, "side" = how far to the right.
         Vector2 right = new Vector2(-heading.y, heading.x);
         for (int i = 0; i < coneHit.Length; i++)
@@ -78,7 +83,7 @@ public class TrackTiming
             }
         }
 
-        // Gates: only crossings in the gate's forward direction count.
+        // gates: only crossings in the gate's forward direction count.
         Vector2 move = new Vector2(to.x - from.x, to.y - from.y);
         foreach (TrackFile.Gate gate in track.gates)
         {
@@ -111,6 +116,7 @@ public class TrackTiming
             else if (name == track.finishGate && lapStart >= 0f && Result < 0f)
             {
                 Result = (time - lapStart) + lapCones * track.conePenaltySeconds;
+                ResultCones = lapCones;
             }
         }
         else if (mode == "skidpad" && name == track.lapGate)
@@ -123,11 +129,12 @@ public class TrackTiming
                 SkidRight = skidCrossings[2] - skidCrossings[1];
                 SkidLeft = skidCrossings[4] - skidCrossings[3];
                 Result = (SkidRight + SkidLeft) / 2f + HitTotal * track.conePenaltySeconds;
+                ResultCones = HitTotal;
             }
         }
     }
 
-    // What the on-screen timer shows. now = current time on the same clock as Update's.
+    // what the on-screen timer shows. now = current time on the same clock as Update's.
     public string StatusText(float now)
     {
         string s = "";
@@ -172,12 +179,12 @@ public class TrackTiming
 
     static float Dot(Vector2 a, Vector2 b) => a.x * b.x + a.y * b.y;
 
-    // Did the move p0 -> p1 cross the gate segment a -> b? Both segments have to straddle each other.
+    // did the move p0 -> p1 cross the gate segment a -> b? both segments have to straddle each other.
     static bool SegmentsCross(Vector2 p0, Vector2 p1, Vector2 a, Vector2 b)
     {
         return Side(a, b, p0) * Side(a, b, p1) < 0f && Side(p0, p1, a) * Side(p0, p1, b) < 0f;
     }
 
-    // Which side of the line o -> u the point v is on: positive one side, negative the other.
+    // which side of the line o -> u the point v is on: positive one side, negative the other.
     static float Side(Vector2 o, Vector2 u, Vector2 v) => (u.x - o.x) * (v.y - o.y) - (u.y - o.y) * (v.x - o.x);
 }
